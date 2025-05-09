@@ -1,0 +1,11 @@
+Chat Name: Customer Support Chat
+Started at: 2025-04-20 14:00:00
+Ended at: 2025-04-25 10:26:46
+----------------------------------------
+[2025-05-09 14:49:59] "sahan" has joined
+[2025-05-09 14:50:03] sahan: sahan
+[2025-05-09 14:50:21] sahan: bye
+[2025-05-09 14:50:21] "sahan" left
+
+
+--- Chat ended at: 2025-05-09 14:50:21 ---

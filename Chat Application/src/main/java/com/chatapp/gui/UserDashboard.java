@@ -104,9 +104,7 @@ public class UserDashboard extends JFrame implements UserClientCallback {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-
         tabbedPane = new JTabbedPane();
-
 
         JPanel chatsPanel = createChatsPanel();
         tabbedPane.addTab("Chats", chatsPanel);
@@ -122,11 +120,9 @@ public class UserDashboard extends JFrame implements UserClientCallback {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-
         JLabel welcomeLabel = new JLabel("Welcome, " + nickName + "!");
         welcomeLabel.setFont(new Font("Arial", Font.BOLD, 16));
         panel.add(welcomeLabel, BorderLayout.NORTH);
-
 
         String[] columnNames = {"ID", "Name", "Created At", "Status"};
         chatsTableModel = new DefaultTableModel(columnNames, 0) {
@@ -364,6 +360,7 @@ public class UserDashboard extends JFrame implements UserClientCallback {
         }
     }
 
+    // this is where subscription is carried out
     private void subscribeToChat() {
         int selectedRow = chatsTable.getSelectedRow();
         if (selectedRow == -1) {

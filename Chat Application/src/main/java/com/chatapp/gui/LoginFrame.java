@@ -6,8 +6,9 @@ import com.chatapp.rmi.UserRemoteInterface;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.RoundRectangle2D;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -15,16 +16,16 @@ import java.rmi.registry.Registry;
 import java.util.Map;
 
 /**
- * Login GUI for the Chat Application - Updated for separated admin/user architecture
+ * Login GUI for the Chat Application — iPhone-style dark mode design
  */
 public class LoginFrame extends JFrame {
 
-    private static final int width = 500;
-    private static final int height = 350;
-    private static final String Rmihost = "localhost";
-    private static final int rmiport = 1099;
-    private static final String userservicename = "UserService";
-    private static final String adminservicename = "AdminService";
+    private static final int WIDTH = 420;
+    private static final int HEIGHT = 620;
+    private static final String RMI_HOST = "localhost";
+    private static final int RMI_PORT = 1099;
+    private static final String USER_SERVICE_NAME = "UserService";
+    private static final String ADMIN_SERVICE_NAME = "AdminService";
 
     private JTextField usernameField;
     private JPasswordField passwordField;
@@ -44,9 +45,9 @@ public class LoginFrame extends JFrame {
 
     private void initializeRMI() {
         try {
-            Registry registry = LocateRegistry.getRegistry(Rmihost, rmiport);
-            userService = (UserRemoteInterface) registry.lookup(userservicename);
-            adminService = (AdminRemoteInterface) registry.lookup(adminservicename);
+            Registry registry = LocateRegistry.getRegistry(RMI_HOST, RMI_PORT);
+            userService = (UserRemoteInterface) registry.lookup(USER_SERVICE_NAME);
+            adminService = (AdminRemoteInterface) registry.lookup(ADMIN_SERVICE_NAME);
         } catch (RemoteException | NotBoundException e) {
             JOptionPane.showMessageDialog(this,
                     "Failed to connect to the chat server: " + e.getMessage(),
@@ -57,68 +58,142 @@ public class LoginFrame extends JFrame {
     }
 
     private void setupUI() {
-        setTitle("Chat Application - Login");
-        setSize(width, height);
+        setTitle("Chat Application");
+        setSize(WIDTH, HEIGHT);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
+        getContentPane().setBackground(ModernTheme.BG_PRIMARY);
 
+        // Main container
         JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BorderLayout(10, 10));
-        mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBackground(ModernTheme.BG_PRIMARY);
+        mainPanel.setBorder(new EmptyBorder(50, 40, 40, 40));
 
-        JLabel titleLabel = new JLabel("Chat Application Login", JLabel.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        mainPanel.add(titleLabel, BorderLayout.NORTH);
+        // ── App Icon / Avatar Circle ──
+        JPanel iconPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        iconPanel.setBackground(ModernTheme.BG_PRIMARY);
+        iconPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
 
-        JPanel formPanel = new JPanel(new GridLayout(2, 2, 10, 10));
-        formPanel.setBorder(new EmptyBorder(20, 0, 20, 0));
-
-        JLabel usernameLabel = new JLabel("Username:");
-        usernameField = new JTextField();
-        JLabel passwordLabel = new JLabel("Password:");
-        passwordField = new JPasswordField();
-
-        formPanel.add(usernameLabel);
-        formPanel.add(usernameField);
-        formPanel.add(passwordLabel);
-        formPanel.add(passwordField);
-
-        mainPanel.add(formPanel, BorderLayout.CENTER);
-
-        JPanel buttonPanel = new JPanel(new GridLayout(4, 1, 0, 10));
-        loginButton = new JButton("User Login");
-        adminLoginButton = new JButton("Admin Login");
-        registerButton = new JButton("Register");
-        statusLabel = new JLabel("", JLabel.CENTER);
-
-        buttonPanel.add(loginButton);
-        buttonPanel.add(adminLoginButton);
-        buttonPanel.add(registerButton);
-        buttonPanel.add(statusLabel);
-
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-
-        loginButton.addActionListener(new ActionListener() {
+        JLabel iconLabel = new JLabel() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                handleUserLogin();
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                // Gradient circle
+                GradientPaint gp = new GradientPaint(0, 0, ModernTheme.ACCENT_BLUE,
+                        getWidth(), getHeight(), ModernTheme.ACCENT_PURPLE);
+                g2.setPaint(gp);
+                g2.fillOval(0, 0, 80, 80);
+                // Chat icon text
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 32));
+                FontMetrics fm = g2.getFontMetrics();
+                String text = "💬";
+                int textX = (80 - fm.stringWidth(text)) / 2;
+                int textY = (80 + fm.getAscent() - fm.getDescent()) / 2;
+                g2.drawString(text, textX, textY);
+                g2.dispose();
             }
-        });
+        };
+        iconLabel.setPreferredSize(new Dimension(80, 80));
+        iconPanel.add(iconLabel);
+        mainPanel.add(iconPanel);
 
-        adminLoginButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                handleAdminLogin();
-            }
-        });
+        mainPanel.add(Box.createVerticalStrut(16));
 
-        registerButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                openRegistrationForm();
-            }
-        });
+        // ── Title ──
+        JLabel titleLabel = new JLabel("Chat App", SwingConstants.CENTER);
+        titleLabel.setFont(ModernTheme.FONT_TITLE);
+        titleLabel.setForeground(ModernTheme.TEXT_PRIMARY);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mainPanel.add(titleLabel);
+
+        JLabel subtitleLabel = new JLabel("Sign in to continue", SwingConstants.CENTER);
+        subtitleLabel.setFont(ModernTheme.FONT_CAPTION);
+        subtitleLabel.setForeground(ModernTheme.TEXT_SECONDARY);
+        subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mainPanel.add(subtitleLabel);
+
+        mainPanel.add(Box.createVerticalStrut(36));
+
+        // ── Form Card ──
+        JPanel formCard = ModernTheme.createCardPanel();
+        formCard.setLayout(new BoxLayout(formCard, BoxLayout.Y_AXIS));
+        formCard.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
+
+        // Username row
+        JLabel usernameLabel = new JLabel("USERNAME");
+        usernameLabel.setFont(ModernTheme.FONT_CAPTION_BOLD);
+        usernameLabel.setForeground(ModernTheme.TEXT_SECONDARY);
+        usernameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        formCard.add(usernameLabel);
+        formCard.add(Box.createVerticalStrut(6));
+
+        usernameField = ModernTheme.createTextField("Enter your username");
+        usernameField.setMaximumSize(new Dimension(Integer.MAX_VALUE, ModernTheme.INPUT_HEIGHT));
+        usernameField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        formCard.add(usernameField);
+
+        formCard.add(Box.createVerticalStrut(16));
+
+        // Password row
+        JLabel passwordLabel = new JLabel("PASSWORD");
+        passwordLabel.setFont(ModernTheme.FONT_CAPTION_BOLD);
+        passwordLabel.setForeground(ModernTheme.TEXT_SECONDARY);
+        passwordLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        formCard.add(passwordLabel);
+        formCard.add(Box.createVerticalStrut(6));
+
+        passwordField = ModernTheme.createPasswordField("Enter your password");
+        passwordField.setMaximumSize(new Dimension(Integer.MAX_VALUE, ModernTheme.INPUT_HEIGHT));
+        passwordField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        formCard.add(passwordField);
+
+        mainPanel.add(formCard);
+
+        mainPanel.add(Box.createVerticalStrut(24));
+
+        // ── Buttons ──
+        loginButton = ModernTheme.createPrimaryButton("Sign In");
+        loginButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, ModernTheme.BUTTON_HEIGHT));
+        loginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mainPanel.add(loginButton);
+
+        mainPanel.add(Box.createVerticalStrut(10));
+
+        adminLoginButton = ModernTheme.createSecondaryButton("Admin Sign In");
+        adminLoginButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, ModernTheme.BUTTON_HEIGHT));
+        adminLoginButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mainPanel.add(adminLoginButton);
+
+        mainPanel.add(Box.createVerticalStrut(20));
+
+        // ── Register link ──
+        JPanel registerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        registerPanel.setBackground(ModernTheme.BG_PRIMARY);
+        registerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        JLabel noAccountLabel = ModernTheme.createSecondaryLabel("Don't have an account?");
+        registerButton = ModernTheme.createTextButton("Sign Up");
+        registerPanel.add(noAccountLabel);
+        registerPanel.add(registerButton);
+        mainPanel.add(registerPanel);
+
+        mainPanel.add(Box.createVerticalStrut(8));
+
+        // ── Status Label ──
+        statusLabel = new JLabel("", SwingConstants.CENTER);
+        statusLabel.setFont(ModernTheme.FONT_CAPTION);
+        statusLabel.setForeground(ModernTheme.ACCENT_RED);
+        statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mainPanel.add(statusLabel);
+
+        // ── Action Listeners ──
+        loginButton.addActionListener(e -> handleUserLogin());
+        adminLoginButton.addActionListener(e -> handleAdminLogin());
+        registerButton.addActionListener(e -> openRegistrationForm());
+        passwordField.addActionListener(e -> handleUserLogin());
 
         add(mainPanel);
     }
@@ -132,21 +207,33 @@ public class LoginFrame extends JFrame {
             return;
         }
 
-        try {
-            Map<String, Object> userData = userService.login(username, password);
+        statusLabel.setText("");
+        loginButton.setEnabled(false);
 
-            // Open user dashboard
-            long userId = (long) userData.get("id");
-            String nickName = (String) userData.get("nickName");
+        new SwingWorker<Map<String, Object>, Void>() {
+            @Override
+            protected Map<String, Object> doInBackground() throws Exception {
+                return userService.login(username, password);
+            }
 
-            SwingUtilities.invokeLater(() -> {
-                new UserDashboard(userId, userService, nickName);
-                dispose(); // Close the login window
-            });
+            @Override
+            protected void done() {
+                try {
+                    Map<String, Object> userData = get();
+                    long userId = (long) userData.get("id");
+                    String nickName = (String) userData.get("nickName");
 
-        } catch (RemoteException ex) {
-            statusLabel.setText("Login failed: " + ex.getMessage());
-        }
+                    SwingUtilities.invokeLater(() -> {
+                        new UserDashboard(userId, userService, nickName);
+                        dispose();
+                    });
+                } catch (Exception ex) {
+                    loginButton.setEnabled(true);
+                    String msg = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
+                    statusLabel.setText(msg != null ? msg.replace("java.rmi.RemoteException: ", "") : "Login failed");
+                }
+            }
+        }.execute();
     }
 
     private void handleAdminLogin() {
@@ -158,20 +245,32 @@ public class LoginFrame extends JFrame {
             return;
         }
 
-        try {
-            Map<String, Object> adminData = adminService.adminLogin(username, password);
+        statusLabel.setText("");
+        adminLoginButton.setEnabled(false);
 
-            // Open admin dashboard
-            long adminId = (long) adminData.get("id");
+        new SwingWorker<Map<String, Object>, Void>() {
+            @Override
+            protected Map<String, Object> doInBackground() throws Exception {
+                return adminService.adminLogin(username, password);
+            }
 
-            SwingUtilities.invokeLater(() -> {
-                new AdminDashboard(adminId, adminService);
-                dispose(); // Close the login window
-            });
+            @Override
+            protected void done() {
+                try {
+                    Map<String, Object> adminData = get();
+                    long adminId = (long) adminData.get("id");
 
-        } catch (RemoteException ex) {
-            statusLabel.setText("Admin login failed: " + ex.getMessage());
-        }
+                    SwingUtilities.invokeLater(() -> {
+                        new AdminDashboard(adminId, adminService);
+                        dispose();
+                    });
+                } catch (Exception ex) {
+                    adminLoginButton.setEnabled(true);
+                    String msg = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
+                    statusLabel.setText(msg != null ? msg.replace("java.rmi.RemoteException: ", "") : "Admin login failed");
+                }
+            }
+        }.execute();
     }
 
     private void openRegistrationForm() {

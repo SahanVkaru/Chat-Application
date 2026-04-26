@@ -6,13 +6,11 @@ import com.chatapp.rmi.UserClientCallback;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.geom.RoundRectangle2D;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
@@ -20,12 +18,12 @@ import java.util.Map;
 import java.util.Vector;
 
 /**
- * Admin Dashboard GUI for the Chat Application
+ * Admin Dashboard GUI — iPhone-style dark mode design
  */
 public class AdminDashboard extends JFrame implements AdminClientCallback {
 
-    private static final int WIDTH = 900;
-    private static final int HEIGHT = 700;
+    private static final int WIDTH = 960;
+    private static final int HEIGHT = 720;
 
     private final long adminId;
     private final AdminRemoteInterface adminService;
@@ -38,7 +36,7 @@ public class AdminDashboard extends JFrame implements AdminClientCallback {
     private DefaultTableModel chatsTableModel;
     private JButton createChatButton;
     private JButton startChatButton;
-    private JButton endChatButton;  // Added button to end chat
+    private JButton endChatButton;
     private JButton subscribeUserButton;
     private JButton unsubscribeUserButton;
     private JButton removeUserButton;
@@ -62,7 +60,6 @@ public class AdminDashboard extends JFrame implements AdminClientCallback {
             callbackStub = (AdminClientCallback) UnicastRemoteObject.exportObject(this, 0);
             adminService.registerAdminClient(adminId, callbackStub);
 
-            // Add shutdown hook to unregister client
             addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosing(WindowEvent e) {
@@ -84,31 +81,88 @@ public class AdminDashboard extends JFrame implements AdminClientCallback {
     }
 
     private void setupUI() {
-        setTitle("Chat Application - Admin Dashboard");
+        setTitle("Chat App — Admin");
         setSize(WIDTH, HEIGHT);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        getContentPane().setBackground(ModernTheme.BG_PRIMARY);
 
-        // Create the tabbed pane
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(ModernTheme.BG_PRIMARY);
+
+        // ── Top Bar ──
+        JPanel topBar = new JPanel(new BorderLayout());
+        topBar.setBackground(ModernTheme.BG_SECONDARY);
+        topBar.setBorder(new EmptyBorder(14, 20, 14, 20));
+        topBar.setPreferredSize(new Dimension(WIDTH, 60));
+
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        leftPanel.setOpaque(false);
+
+        // Admin shield icon
+        JLabel shieldIcon = new JLabel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gp = new GradientPaint(0, 0, ModernTheme.ACCENT_ORANGE,
+                        getWidth(), getHeight(), ModernTheme.ACCENT_RED);
+                g2.setPaint(gp);
+                g2.fillOval(0, 0, 36, 36);
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 16));
+                String text = "⚙";
+                FontMetrics fm = g2.getFontMetrics();
+                g2.drawString(text, (36 - fm.stringWidth(text)) / 2,
+                        (36 + fm.getAscent() - fm.getDescent()) / 2);
+                g2.dispose();
+            }
+        };
+        shieldIcon.setPreferredSize(new Dimension(36, 36));
+        leftPanel.add(shieldIcon);
+        leftPanel.add(Box.createHorizontalStrut(12));
+
+        JPanel namePanel = new JPanel();
+        namePanel.setLayout(new BoxLayout(namePanel, BoxLayout.Y_AXIS));
+        namePanel.setOpaque(false);
+        JLabel roleLabel = new JLabel("Administrator");
+        roleLabel.setFont(ModernTheme.FONT_SMALL);
+        roleLabel.setForeground(ModernTheme.ACCENT_ORANGE);
+        namePanel.add(roleLabel);
+        JLabel titleLabel = new JLabel("Admin Dashboard");
+        titleLabel.setFont(ModernTheme.FONT_SUBHEAD);
+        titleLabel.setForeground(ModernTheme.TEXT_PRIMARY);
+        namePanel.add(titleLabel);
+        leftPanel.add(namePanel);
+
+        topBar.add(leftPanel, BorderLayout.WEST);
+
+        JLabel adminBadge = ModernTheme.createStatusBadge("Admin", true);
+        topBar.add(adminBadge, BorderLayout.EAST);
+
+        mainPanel.add(topBar, BorderLayout.NORTH);
+
+        // ── Tabbed Content ──
         tabbedPane = new JTabbedPane();
+        ModernTheme.styleTabbedPane(tabbedPane);
 
-        // Create Users panel
-        JPanel usersPanel = createUsersPanel();
-        tabbedPane.addTab("Users", usersPanel);
+        tabbedPane.addTab("  👥  Users  ", createUsersPanel());
+        tabbedPane.addTab("  💬  Chats  ", createChatsPanel());
 
-        // Create Chats panel
-        JPanel chatsPanel = createChatsPanel();
-        tabbedPane.addTab("Chats", chatsPanel);
-
-        getContentPane().add(tabbedPane);
+        mainPanel.add(tabbedPane, BorderLayout.CENTER);
+        add(mainPanel);
     }
 
     private JPanel createUsersPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        JPanel panel = new JPanel(new BorderLayout(0, 0));
+        panel.setBackground(ModernTheme.BG_PRIMARY);
+        panel.setBorder(new EmptyBorder(16, 20, 16, 20));
 
-        // Create the table model with column names
-        String[] columnNames = {"ID", "Email", "Username", "Nick Name", "Admin"};
+        JLabel sectionHeader = ModernTheme.createSectionHeader("Registered Users");
+        panel.add(sectionHeader, BorderLayout.NORTH);
+
+        // Table
+        String[] columnNames = {"ID", "Email", "Username", "Nickname", "Admin"};
         usersTableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -116,71 +170,76 @@ public class AdminDashboard extends JFrame implements AdminClientCallback {
             }
         };
 
-        // Create the table
         usersTable = new JTable(usersTableModel);
         usersTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        ModernTheme.styleTable(usersTable);
 
-        // Set column widths
-        usersTable.getColumnModel().getColumn(0).setPreferredWidth(30);
-        usersTable.getColumnModel().getColumn(1).setPreferredWidth(150);
-        usersTable.getColumnModel().getColumn(2).setPreferredWidth(100);
-        usersTable.getColumnModel().getColumn(3).setPreferredWidth(100);
-        usersTable.getColumnModel().getColumn(4).setPreferredWidth(50);
+        usersTable.getColumnModel().getColumn(0).setPreferredWidth(40);
+        usersTable.getColumnModel().getColumn(1).setPreferredWidth(200);
+        usersTable.getColumnModel().getColumn(2).setPreferredWidth(130);
+        usersTable.getColumnModel().getColumn(3).setPreferredWidth(130);
+        usersTable.getColumnModel().getColumn(4).setPreferredWidth(60);
 
-        // Create scroll pane for the table
-        JScrollPane scrollPane = new JScrollPane(usersTable);
+        JScrollPane scrollPane = ModernTheme.createScrollPane(usersTable);
         panel.add(scrollPane, BorderLayout.CENTER);
 
-        // Create buttons panel
-        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        removeUserButton = new JButton("Remove User");
-        refreshButton = new JButton("Refresh");
+        // Buttons
+        JPanel buttonBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        buttonBar.setOpaque(false);
+        buttonBar.setBorder(new EmptyBorder(8, 0, 0, 0));
 
-        buttonsPanel.add(removeUserButton);
-        buttonsPanel.add(refreshButton);
+        removeUserButton = ModernTheme.createDestructiveButton("Remove User");
+        removeUserButton.setPreferredSize(new Dimension(140, ModernTheme.BUTTON_HEIGHT));
+        buttonBar.add(removeUserButton);
 
-        panel.add(buttonsPanel, BorderLayout.SOUTH);
+        refreshButton = ModernTheme.createTextButton("⟳ Refresh");
+        buttonBar.add(refreshButton);
 
-        // Add action listeners
-        removeUserButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                removeSelectedUser();
-            }
-        });
+        panel.add(buttonBar, BorderLayout.SOUTH);
 
-        refreshButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                loadUsersData();
-            }
-        });
+        removeUserButton.addActionListener(e -> removeSelectedUser());
+        refreshButton.addActionListener(e -> loadUsersData());
 
         return panel;
     }
 
     private JPanel createChatsPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        JPanel panel = new JPanel(new BorderLayout(0, 0));
+        panel.setBackground(ModernTheme.BG_PRIMARY);
+        panel.setBorder(new EmptyBorder(16, 20, 16, 20));
 
-        // Create top panel with create chat controls
-        JPanel topPanel = new JPanel(new BorderLayout(10, 10));
-        topPanel.setBorder(new TitledBorder("Create New Chat"));
+        // ── Create Chat Section ──
+        JPanel createSection = new JPanel();
+        createSection.setLayout(new BoxLayout(createSection, BoxLayout.Y_AXIS));
+        createSection.setOpaque(false);
 
-        JPanel createChatPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel chatNameLabel = new JLabel("Chat Name:");
-        final JTextField chatNameField = new JTextField(20);
-        createChatButton = new JButton("Create Chat");
+        JLabel createHeader = ModernTheme.createSectionHeader("Create New Chat");
+        createHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
+        createSection.add(createHeader);
+        createSection.add(Box.createVerticalStrut(8));
 
-        createChatPanel.add(chatNameLabel);
-        createChatPanel.add(chatNameField);
-        createChatPanel.add(createChatButton);
+        JPanel createCard = ModernTheme.createCardPanel();
+        createCard.setLayout(new BorderLayout(10, 0));
+        createCard.setMaximumSize(new Dimension(Integer.MAX_VALUE, 64));
+        createCard.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        topPanel.add(createChatPanel, BorderLayout.NORTH);
+        JTextField chatNameField = ModernTheme.createTextField("Enter chat name...");
+        createCard.add(chatNameField, BorderLayout.CENTER);
 
-        panel.add(topPanel, BorderLayout.NORTH);
+        createChatButton = ModernTheme.createPrimaryButton("Create");
+        createChatButton.setPreferredSize(new Dimension(100, ModernTheme.BUTTON_HEIGHT));
+        createCard.add(createChatButton, BorderLayout.EAST);
 
-        // Create the table model with column names
+        createSection.add(createCard);
+        createSection.add(Box.createVerticalStrut(12));
+
+        JLabel chatListHeader = ModernTheme.createSectionHeader("All Chats");
+        chatListHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
+        createSection.add(chatListHeader);
+
+        panel.add(createSection, BorderLayout.NORTH);
+
+        // ── Chats Table ──
         String[] columnNames = {"ID", "Name", "Created At", "Status", "Subscribers"};
         chatsTableModel = new DefaultTableModel(columnNames, 0) {
             @Override
@@ -189,90 +248,64 @@ public class AdminDashboard extends JFrame implements AdminClientCallback {
             }
         };
 
-        // Create the table
         chatsTable = new JTable(chatsTableModel);
         chatsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        ModernTheme.styleTable(chatsTable);
 
-        // Set column widths
-        chatsTable.getColumnModel().getColumn(0).setPreferredWidth(30);
-        chatsTable.getColumnModel().getColumn(1).setPreferredWidth(150);
-        chatsTable.getColumnModel().getColumn(2).setPreferredWidth(150);
-        chatsTable.getColumnModel().getColumn(3).setPreferredWidth(70);
-        chatsTable.getColumnModel().getColumn(4).setPreferredWidth(80);
+        chatsTable.getColumnModel().getColumn(0).setPreferredWidth(40);
+        chatsTable.getColumnModel().getColumn(1).setPreferredWidth(180);
+        chatsTable.getColumnModel().getColumn(2).setPreferredWidth(160);
+        chatsTable.getColumnModel().getColumn(3).setPreferredWidth(80);
+        chatsTable.getColumnModel().getColumn(4).setPreferredWidth(90);
 
-        // Create scroll pane for the table
-        JScrollPane scrollPane = new JScrollPane(chatsTable);
+        JScrollPane scrollPane = ModernTheme.createScrollPane(chatsTable);
         panel.add(scrollPane, BorderLayout.CENTER);
 
-        // Create buttons panel
-        JPanel buttonsPanel = new JPanel(new GridLayout(2, 3, 10, 10));
-        buttonsPanel.setBorder(new EmptyBorder(10, 0, 0, 0));
+        // ── Action Buttons ──
+        JPanel buttonBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        buttonBar.setOpaque(false);
+        buttonBar.setBorder(new EmptyBorder(8, 0, 0, 0));
 
-        startChatButton = new JButton("Start Selected Chat");
-        endChatButton = new JButton("End Selected Chat");
-        subscribeUserButton = new JButton("Subscribe User to Chat");
-        unsubscribeUserButton = new JButton("Unsubscribe User from Chat");
-        JButton refreshChatsButton = new JButton("Refresh");
+        startChatButton = ModernTheme.createPrimaryButton("Start Chat");
+        startChatButton.setPreferredSize(new Dimension(120, ModernTheme.BUTTON_HEIGHT));
+        buttonBar.add(startChatButton);
 
-        buttonsPanel.add(startChatButton);
-        buttonsPanel.add(endChatButton);
-        buttonsPanel.add(subscribeUserButton);
-        buttonsPanel.add(unsubscribeUserButton);
-        buttonsPanel.add(refreshChatsButton);
+        endChatButton = ModernTheme.createDestructiveButton("End Chat");
+        endChatButton.setPreferredSize(new Dimension(110, ModernTheme.BUTTON_HEIGHT));
+        buttonBar.add(endChatButton);
 
-        panel.add(buttonsPanel, BorderLayout.SOUTH);
+        subscribeUserButton = ModernTheme.createSecondaryButton("Subscribe User");
+        subscribeUserButton.setPreferredSize(new Dimension(150, ModernTheme.BUTTON_HEIGHT));
+        buttonBar.add(subscribeUserButton);
 
-        // Add action listeners
-        createChatButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String chatName = chatNameField.getText().trim();
-                if (!chatName.isEmpty()) {
-                    createNewChat(chatName);
-                    chatNameField.setText("");
-                } else {
-                    JOptionPane.showMessageDialog(AdminDashboard.this,
-                            "Please enter a chat name",
-                            "Input Error",
-                            JOptionPane.ERROR_MESSAGE);
-                }
+        unsubscribeUserButton = ModernTheme.createSecondaryButton("Unsubscribe User");
+        unsubscribeUserButton.setPreferredSize(new Dimension(160, ModernTheme.BUTTON_HEIGHT));
+        buttonBar.add(unsubscribeUserButton);
+
+        JButton refreshChatsButton = ModernTheme.createTextButton("⟳ Refresh");
+        buttonBar.add(refreshChatsButton);
+
+        panel.add(buttonBar, BorderLayout.SOUTH);
+
+        // ── Action Listeners ──
+        createChatButton.addActionListener(e -> {
+            String chatName = chatNameField.getText().trim();
+            if (!chatName.isEmpty()) {
+                createNewChat(chatName);
+                chatNameField.setText("");
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Please enter a chat name",
+                        "Input Error",
+                        JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        startChatButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                startSelectedChat();
-            }
-        });
-
-        endChatButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                endSelectedChat();
-            }
-        });
-
-        subscribeUserButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showSubscriptionDialog(true);
-            }
-        });
-
-        unsubscribeUserButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                showSubscriptionDialog(false);
-            }
-        });
-
-        refreshChatsButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                loadChatsData();
-            }
-        });
+        startChatButton.addActionListener(e -> startSelectedChat());
+        endChatButton.addActionListener(e -> endSelectedChat());
+        subscribeUserButton.addActionListener(e -> showSubscriptionDialog(true));
+        unsubscribeUserButton.addActionListener(e -> showSubscriptionDialog(false));
+        refreshChatsButton.addActionListener(e -> loadChatsData());
 
         return panel;
     }
@@ -285,18 +318,15 @@ public class AdminDashboard extends JFrame implements AdminClientCallback {
     private void loadUsersData() {
         try {
             List<Map<String, Object>> users = adminService.getAllUsers();
-
-            // Clear table model
             usersTableModel.setRowCount(0);
 
-            // Add users to table
             for (Map<String, Object> user : users) {
                 Vector<Object> row = new Vector<>();
                 row.add(user.get("id"));
                 row.add(user.get("email"));
                 row.add(user.get("username"));
                 row.add(user.get("nickName"));
-                row.add(user.get("isAdmin"));
+                row.add((boolean) user.get("isAdmin") ? "✓ Admin" : "User");
 
                 usersTableModel.addRow(row);
             }
@@ -311,11 +341,8 @@ public class AdminDashboard extends JFrame implements AdminClientCallback {
     private void loadChatsData() {
         try {
             List<Map<String, Object>> chats = adminService.getAdminChatList();
-
-            // Clear table model
             chatsTableModel.setRowCount(0);
 
-            // Add chats to table
             for (Map<String, Object> chat : chats) {
                 Vector<Object> row = new Vector<>();
                 row.add(chat.get("id"));
@@ -323,9 +350,7 @@ public class AdminDashboard extends JFrame implements AdminClientCallback {
                 row.add(chat.get("createdAt"));
 
                 boolean isActive = (boolean) chat.get("isActive");
-                String status = isActive ? "Active" : "Inactive";
-                row.add(status);
-
+                row.add(isActive ? "● Active" : "Inactive");
                 row.add(chat.get("subscriberCount"));
 
                 chatsTableModel.addRow(row);
@@ -349,9 +374,9 @@ public class AdminDashboard extends JFrame implements AdminClientCallback {
         }
 
         long userId = (long) usersTableModel.getValueAt(selectedRow, 0);
-        boolean isAdmin = (boolean) usersTableModel.getValueAt(selectedRow, 4);
+        String role = (String) usersTableModel.getValueAt(selectedRow, 4);
 
-        if (isAdmin) {
+        if ("✓ Admin".equals(role)) {
             JOptionPane.showMessageDialog(this,
                     "Cannot remove admin user",
                     "Operation Not Allowed",
@@ -383,10 +408,10 @@ public class AdminDashboard extends JFrame implements AdminClientCallback {
 
     private void createNewChat(String chatName) {
         try {
-            long chatId = adminService.createChat(chatName);
+            adminService.createChat(chatName);
             loadChatsData();
             JOptionPane.showMessageDialog(this,
-                    "Chat '" + chatName + "' created successfully",
+                    "Chat '" + chatName + "' created!",
                     "Success",
                     JOptionPane.INFORMATION_MESSAGE);
         } catch (RemoteException e) {
@@ -411,7 +436,7 @@ public class AdminDashboard extends JFrame implements AdminClientCallback {
         final String chatName = (String) chatsTableModel.getValueAt(selectedRow, 1);
         String status = (String) chatsTableModel.getValueAt(selectedRow, 3);
 
-        if ("Active".equals(status)) {
+        if ("● Active".equals(status)) {
             JOptionPane.showMessageDialog(this,
                     "This chat is already active",
                     "Information",
@@ -419,40 +444,34 @@ public class AdminDashboard extends JFrame implements AdminClientCallback {
             return;
         }
 
-        // Show loading indicator
-        final JDialog loadingDialog = new JDialog(this, "Starting Chat", true);
-        loadingDialog.add(new JLabel("Starting chat, please wait..."));
-        loadingDialog.setSize(300, 100);
-        loadingDialog.setLocationRelativeTo(this);
+        startChatButton.setEnabled(false);
 
-        // Run in background thread
-        new Thread(() -> {
-            try {
-                // Show loading dialog in EDT
-                SwingUtilities.invokeLater(() -> loadingDialog.setVisible(true));
-
-                // Make remote call in background thread
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
                 adminService.startChat(chatId);
+                return null;
+            }
 
-                // Update UI in EDT
-                SwingUtilities.invokeLater(() -> {
-                    loadingDialog.dispose();
+            @Override
+            protected void done() {
+                try {
+                    get();
                     loadChatsData();
                     JOptionPane.showMessageDialog(AdminDashboard.this,
-                            "Chat '" + chatName + "' started successfully",
+                            "Chat '" + chatName + "' started!",
                             "Success",
                             JOptionPane.INFORMATION_MESSAGE);
-                });
-            } catch (RemoteException e) {
-                SwingUtilities.invokeLater(() -> {
-                    loadingDialog.dispose();
+                } catch (Exception e) {
                     JOptionPane.showMessageDialog(AdminDashboard.this,
                             "Failed to start chat: " + e.getMessage(),
                             "Error",
                             JOptionPane.ERROR_MESSAGE);
-                });
+                } finally {
+                    startChatButton.setEnabled(true);
+                }
             }
-        }).start();
+        }.execute();
     }
 
     private void endSelectedChat() {
@@ -469,7 +488,7 @@ public class AdminDashboard extends JFrame implements AdminClientCallback {
         final String chatName = (String) chatsTableModel.getValueAt(selectedRow, 1);
         String status = (String) chatsTableModel.getValueAt(selectedRow, 3);
 
-        if (!"Active".equals(status)) {
+        if (!"● Active".equals(status)) {
             JOptionPane.showMessageDialog(this,
                     "This chat is not active",
                     "Information",
@@ -478,43 +497,38 @@ public class AdminDashboard extends JFrame implements AdminClientCallback {
         }
 
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to end this chat?",
+                "Are you sure you want to end '" + chatName + "'?",
                 "Confirm End Chat",
                 JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            // Show loading indicator
-            final JDialog loadingDialog = new JDialog(this, "Ending Chat", true);
-            loadingDialog.add(new JLabel("Ending chat, please wait..."));
-            loadingDialog.setSize(300, 100);
-            loadingDialog.setLocationRelativeTo(this);
+            endChatButton.setEnabled(false);
 
-            // Run in background thread
-            new Thread(() -> {
-                try {
-                    // Show loading dialog in EDT
-                    SwingUtilities.invokeLater(() -> loadingDialog.setVisible(true));
-
-                    // Make remote call in background thread
+            new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() throws Exception {
                     adminService.endChat(chatId);
+                    return null;
+                }
 
-                    // Update UI in EDT
-                    SwingUtilities.invokeLater(() -> {
-                        loadingDialog.dispose();
+                @Override
+                protected void done() {
+                    try {
+                        get();
                         loadChatsData();
-                    });
-                } catch (RemoteException e) {
-                    SwingUtilities.invokeLater(() -> {
-                        loadingDialog.dispose();
+                    } catch (Exception e) {
                         JOptionPane.showMessageDialog(AdminDashboard.this,
                                 "Failed to end chat: " + e.getMessage(),
                                 "Error",
                                 JOptionPane.ERROR_MESSAGE);
-                    });
+                    } finally {
+                        endChatButton.setEnabled(true);
+                    }
                 }
-            }).start();
+            }.execute();
         }
     }
+
     private void showSubscriptionDialog(boolean subscribe) {
         int selectedRow = chatsTable.getSelectedRow();
         if (selectedRow == -1) {
@@ -548,7 +562,7 @@ public class AdminDashboard extends JFrame implements AdminClientCallback {
 
             String selectedUser = (String) JOptionPane.showInputDialog(
                     this,
-                    subscribe ? "Select user to subscribe to chat:" : "Select user to unsubscribe from chat:",
+                    subscribe ? "Select user to subscribe:" : "Select user to unsubscribe:",
                     subscribe ? "Subscribe User" : "Unsubscribe User",
                     JOptionPane.QUESTION_MESSAGE,
                     null,
@@ -570,16 +584,17 @@ public class AdminDashboard extends JFrame implements AdminClientCallback {
                     if (subscribe) {
                         adminService.subscribeUserToChat(userId, chatId);
                         JOptionPane.showMessageDialog(this,
-                                "User subscribed to chat successfully.",
+                                "User subscribed successfully!",
                                 "Success",
                                 JOptionPane.INFORMATION_MESSAGE);
                     } else {
                         adminService.unsubscribeUserFromChat(userId, chatId);
                         JOptionPane.showMessageDialog(this,
-                                "User unsubscribed from chat successfully.",
+                                "User unsubscribed successfully!",
                                 "Success",
                                 JOptionPane.INFORMATION_MESSAGE);
                     }
+                    loadChatsData();
                 }
             }
         } catch (RemoteException e) {
@@ -590,74 +605,67 @@ public class AdminDashboard extends JFrame implements AdminClientCallback {
         }
     }
 
+    // ── AdminClientCallback implementation ──
 
-    // AdminClientCallback implementation
     @Override
     public void userJoinedChat(Map<String, Object> userData) throws RemoteException {
-        // Update UI or show notification as needed
-        loadChatsData(); // Refresh to show updated subscriber count
+        SwingUtilities.invokeLater(() -> loadChatsData());
     }
 
     @Override
     public void userLeftChat(Map<String, Object> userData) throws RemoteException {
-        // Update UI or show notification as needed
-        loadChatsData(); // Refresh to show updated subscriber count
+        SwingUtilities.invokeLater(() -> loadChatsData());
     }
 
     @Override
     public void chatStarted(Map<String, Object> chatData) throws RemoteException {
-        String chatName = (String) chatData.get("chatName");
-        String startTime = (String) chatData.get("startTime");
+        SwingUtilities.invokeLater(() -> {
+            String chatName = (String) chatData.get("chatName");
+            String startTime = (String) chatData.get("startTime");
 
-        JOptionPane.showMessageDialog(this,
-                "Chat '" + chatName + "' has started at " + startTime,
-                "Chat Started",
-                JOptionPane.INFORMATION_MESSAGE);
-
-        loadChatsData();
+            JOptionPane.showMessageDialog(this,
+                    "Chat '" + chatName + "' started at " + startTime,
+                    "Chat Started",
+                    JOptionPane.INFORMATION_MESSAGE);
+            loadChatsData();
+        });
     }
 
     @Override
     public void chatEnded(Map<String, Object> chatData) throws RemoteException {
-        String chatName = (String) chatData.get("chatName");
-        String endTime = (String) chatData.get("endTime");
+        SwingUtilities.invokeLater(() -> {
+            String chatName = (String) chatData.get("chatName");
+            String endTime = (String) chatData.get("endTime");
 
-        JOptionPane.showMessageDialog(this,
-                "Chat '" + chatName + "' has ended at " + endTime,
-                "Chat Ended",
-                JOptionPane.INFORMATION_MESSAGE);
-
-        loadChatsData();
+            JOptionPane.showMessageDialog(this,
+                    "Chat '" + chatName + "' ended at " + endTime,
+                    "Chat Ended",
+                    JOptionPane.INFORMATION_MESSAGE);
+            loadChatsData();
+        });
     }
 
     @Override
     public void userRegistered(Map<String, Object> userData) throws RemoteException {
-        // Load user data to show the newly registered user
-        loadUsersData();
-
-        String username = (String) userData.get("username");
-        JOptionPane.showMessageDialog(this,
-                "New user registered: " + username,
-                "User Registered",
-                JOptionPane.INFORMATION_MESSAGE);
+        SwingUtilities.invokeLater(() -> {
+            loadUsersData();
+            String username = (String) userData.get("username");
+            JOptionPane.showMessageDialog(this,
+                    "New user registered: " + username,
+                    "User Registered",
+                    JOptionPane.INFORMATION_MESSAGE);
+        });
     }
 
     @Override
     public void chatActivityUpdate(Map<String, Object> activityData) throws RemoteException {
-        // Update any activity metrics or refresh the chat list
-        loadChatsData();
+        SwingUtilities.invokeLater(() -> loadChatsData());
     }
-
 
     public void chatClosed() {
         isInChat = false;
         chatFrame = null;
-
-        // Optional: Re-enable any UI elements that should be available when not in a chat
-        // For example, you might want to re-enable certain buttons:
         startChatButton.setEnabled(true);
-
-        // Refresh the chat list to update any changes
         loadChatsData();
     }
 }

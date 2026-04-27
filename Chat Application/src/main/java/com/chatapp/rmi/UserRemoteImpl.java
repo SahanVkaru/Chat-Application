@@ -31,7 +31,6 @@ public class UserRemoteImpl extends UnicastRemoteObject implements UserRemoteInt
         this.connectedUsers = new ConcurrentHashMap<>();
     }
 
-    // register the user
     @Override
     public long registerUser(String email, String username, String password, String nickName, byte[] profilePicture) throws RemoteException {
         try {

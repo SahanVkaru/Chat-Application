@@ -6,18 +6,20 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.rmi.RemoteException;
 
 /**
- * Registration GUI for the Chat Application — iPhone-style dark mode design
+ * Registration GUI for the Chat Application
  */
 public class RegistrationFrame extends JFrame {
 
-    private static final int WIDTH = 440;
-    private static final int HEIGHT = 720;
+    private static final int WIDTH = 500;
+    private static final int HEIGHT = 500;
 
     private JTextField emailField;
     private JTextField usernameField;
@@ -42,133 +44,99 @@ public class RegistrationFrame extends JFrame {
     }
 
     private void setupUI() {
-        setTitle("Create Account");
+        setTitle("Chat Application - Registration");
         setSize(WIDTH, HEIGHT);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(parentFrame);
         setResizable(false);
-        getContentPane().setBackground(ModernTheme.BG_PRIMARY);
 
-        // Main container with scrolling
         JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-        mainPanel.setBackground(ModernTheme.BG_PRIMARY);
-        mainPanel.setBorder(new EmptyBorder(40, 40, 40, 40));
+        mainPanel.setLayout(new BorderLayout(10, 10));
+        mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // ── Header ──
-        JLabel titleLabel = new JLabel("Create Account", SwingConstants.CENTER);
-        titleLabel.setFont(ModernTheme.FONT_TITLE);
-        titleLabel.setForeground(ModernTheme.TEXT_PRIMARY);
-        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        mainPanel.add(titleLabel);
+        JLabel titleLabel = new JLabel("User Registration", JLabel.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        mainPanel.add(titleLabel, BorderLayout.NORTH);
 
-        JLabel subtitleLabel = new JLabel("Fill in your details to get started", SwingConstants.CENTER);
-        subtitleLabel.setFont(ModernTheme.FONT_CAPTION);
-        subtitleLabel.setForeground(ModernTheme.TEXT_SECONDARY);
-        subtitleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        mainPanel.add(subtitleLabel);
-
-        mainPanel.add(Box.createVerticalStrut(28));
-
-        // ── Form Card ──
-        JPanel formCard = ModernTheme.createCardPanel();
-        formCard.setLayout(new BoxLayout(formCard, BoxLayout.Y_AXIS));
+        JPanel formPanel = new JPanel(new GridLayout(6, 2, 10, 10));
+        formPanel.setBorder(new EmptyBorder(20, 0, 20, 0));
 
         // Email
-        formCard.add(createFieldGroup("EMAIL", emailField = ModernTheme.createTextField("your@email.com")));
-        formCard.add(Box.createVerticalStrut(14));
+        JLabel emailLabel = new JLabel("Email:");
+        emailField = new JTextField();
+        formPanel.add(emailLabel);
+        formPanel.add(emailField);
 
         // Username
-        formCard.add(createFieldGroup("USERNAME", usernameField = ModernTheme.createTextField("Choose a username")));
-        formCard.add(Box.createVerticalStrut(14));
+        JLabel usernameLabel = new JLabel("Username:");
+        usernameField = new JTextField();
+        formPanel.add(usernameLabel);
+        formPanel.add(usernameField);
 
         // Password
-        formCard.add(createFieldGroup("PASSWORD", passwordField = ModernTheme.createPasswordField("At least 6 characters")));
-        formCard.add(Box.createVerticalStrut(14));
+        JLabel passwordLabel = new JLabel("Password:");
+        passwordField = new JPasswordField();
+        formPanel.add(passwordLabel);
+        formPanel.add(passwordField);
 
         // Confirm Password
-        formCard.add(createFieldGroup("CONFIRM PASSWORD", confirmPasswordField = ModernTheme.createPasswordField("Re-enter password")));
-        formCard.add(Box.createVerticalStrut(14));
+        JLabel confirmPasswordLabel = new JLabel("Confirm Password:");
+        confirmPasswordField = new JPasswordField();
+        formPanel.add(confirmPasswordLabel);
+        formPanel.add(confirmPasswordField);
 
         // Nickname
-        formCard.add(createFieldGroup("NICKNAME", nickNameField = ModernTheme.createTextField("Display name")));
-        formCard.add(Box.createVerticalStrut(14));
+        JLabel nickNameLabel = new JLabel("Nickname:");
+        nickNameField = new JTextField();
+        formPanel.add(nickNameLabel);
+        formPanel.add(nickNameField);
 
         // Profile Picture
-        JLabel picLabel = new JLabel("PROFILE PICTURE");
-        picLabel.setFont(ModernTheme.FONT_CAPTION_BOLD);
-        picLabel.setForeground(ModernTheme.TEXT_SECONDARY);
-        picLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        formCard.add(picLabel);
-        formCard.add(Box.createVerticalStrut(6));
+        JLabel profilePictureLabel = new JLabel("Profile Picture:");
+        JPanel imagePanel = new JPanel(new BorderLayout(5, 0));
+        chooseImageButton = new JButton("Choose Image");
+        imageLabel = new JLabel("No image selected", JLabel.CENTER);
+        imagePanel.add(chooseImageButton, BorderLayout.WEST);
+        imagePanel.add(imageLabel, BorderLayout.CENTER);
+        formPanel.add(profilePictureLabel);
+        formPanel.add(imagePanel);
 
-        JPanel imageRow = new JPanel(new BorderLayout(10, 0));
-        imageRow.setOpaque(false);
-        imageRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, ModernTheme.BUTTON_HEIGHT));
-        imageRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        mainPanel.add(formPanel, BorderLayout.CENTER);
 
-        chooseImageButton = ModernTheme.createSecondaryButton("Choose Image");
-        chooseImageButton.setPreferredSize(new Dimension(140, ModernTheme.BUTTON_HEIGHT));
-        imageRow.add(chooseImageButton, BorderLayout.WEST);
+        JPanel buttonPanel = new JPanel(new GridLayout(3, 1, 0, 10));
+        registerButton = new JButton("Register");
+        cancelButton = new JButton("Cancel");
+        statusLabel = new JLabel("", JLabel.CENTER);
 
-        imageLabel = new JLabel("No image selected");
-        imageLabel.setFont(ModernTheme.FONT_CAPTION);
-        imageLabel.setForeground(ModernTheme.TEXT_TERTIARY);
-        imageRow.add(imageLabel, BorderLayout.CENTER);
+        buttonPanel.add(registerButton);
+        buttonPanel.add(cancelButton);
+        buttonPanel.add(statusLabel);
 
-        formCard.add(imageRow);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-        mainPanel.add(formCard);
+        // Action listeners
+        registerButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                handleRegistration();
+            }
+        });
 
-        mainPanel.add(Box.createVerticalStrut(24));
+        cancelButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
+        });
 
-        // ── Buttons ──
-        registerButton = ModernTheme.createPrimaryButton("Create Account");
-        registerButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, ModernTheme.BUTTON_HEIGHT));
-        registerButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        mainPanel.add(registerButton);
-
-        mainPanel.add(Box.createVerticalStrut(10));
-
-        cancelButton = ModernTheme.createTextButton("← Back to Sign In");
-        cancelButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        mainPanel.add(cancelButton);
-
-        mainPanel.add(Box.createVerticalStrut(8));
-
-        // ── Status ──
-        statusLabel = new JLabel("", SwingConstants.CENTER);
-        statusLabel.setFont(ModernTheme.FONT_CAPTION);
-        statusLabel.setForeground(ModernTheme.ACCENT_RED);
-        statusLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        mainPanel.add(statusLabel);
-
-        // ── Action Listeners ──
-        registerButton.addActionListener(e -> handleRegistration());
-        cancelButton.addActionListener(e -> dispose());
-        chooseImageButton.addActionListener(e -> selectProfilePicture());
+        chooseImageButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                selectProfilePicture();
+            }
+        });
 
         add(mainPanel);
-    }
-
-    private JPanel createFieldGroup(String labelText, JComponent field) {
-        JPanel group = new JPanel();
-        group.setLayout(new BoxLayout(group, BoxLayout.Y_AXIS));
-        group.setOpaque(false);
-        group.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JLabel label = new JLabel(labelText);
-        label.setFont(ModernTheme.FONT_CAPTION_BOLD);
-        label.setForeground(ModernTheme.TEXT_SECONDARY);
-        label.setAlignmentX(Component.LEFT_ALIGNMENT);
-        group.add(label);
-        group.add(Box.createVerticalStrut(6));
-
-        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, ModernTheme.INPUT_HEIGHT));
-        field.setAlignmentX(Component.LEFT_ALIGNMENT);
-        group.add(field);
-
-        return group;
     }
 
     private void selectProfilePicture() {
@@ -182,7 +150,6 @@ public class RegistrationFrame extends JFrame {
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             imageLabel.setText(selectedFile.getName());
-            imageLabel.setForeground(ModernTheme.ACCENT_GREEN);
 
             try {
                 profilePicture = Files.readAllBytes(selectedFile.toPath());
@@ -193,7 +160,6 @@ public class RegistrationFrame extends JFrame {
                         JOptionPane.ERROR_MESSAGE);
                 profilePicture = null;
                 imageLabel.setText("No image selected");
-                imageLabel.setForeground(ModernTheme.TEXT_TERTIARY);
             }
         }
     }
@@ -222,31 +188,16 @@ public class RegistrationFrame extends JFrame {
             return;
         }
 
-        statusLabel.setText("");
-        registerButton.setEnabled(false);
-
-        new SwingWorker<Long, Void>() {
-            @Override
-            protected Long doInBackground() throws Exception {
-                return userService.registerUser(email, username, password, nickName, profilePicture);
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    long userId = get();
-                    JOptionPane.showMessageDialog(RegistrationFrame.this,
-                            "Account created successfully!\nYour user ID is: " + userId,
-                            "Welcome!",
-                            JOptionPane.INFORMATION_MESSAGE);
-                    dispose();
-                } catch (Exception ex) {
-                    registerButton.setEnabled(true);
-                    String msg = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
-                    statusLabel.setText(msg != null ? msg.replace("java.rmi.RemoteException: ", "") : "Registration failed");
-                }
-            }
-        }.execute();
+        try {
+            long userId = userService.registerUser(email, username, password, nickName, profilePicture);
+            JOptionPane.showMessageDialog(this,
+                    "Registration successful! Your user ID is: " + userId,
+                    "Registration Complete",
+                    JOptionPane.INFORMATION_MESSAGE);
+            dispose();
+        } catch (RemoteException ex) {
+            statusLabel.setText("Registration failed: " + ex.getMessage());
+        }
     }
 
 }

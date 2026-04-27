@@ -161,7 +161,6 @@ public class UserChatService {
             chatDAO.save(chat);
         }
 
-        // file setup
         File file = new File(chat.getFilePath());
         if (!file.exists()) {
             file.getParentFile().mkdirs();

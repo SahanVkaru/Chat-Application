@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Service class for User profile related operations which can be done via the business layer of this application
+ * Service class for User profile related operations
  */
 public class UserProfileService {
 

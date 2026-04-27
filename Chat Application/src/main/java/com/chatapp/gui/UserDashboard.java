@@ -6,12 +6,14 @@ import com.chatapp.rmi.UserRemoteInterface;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -23,12 +25,12 @@ import java.util.Map;
 import java.util.Vector;
 
 /**
- * User Dashboard GUI — iPhone-style dark mode design
+ * User Dashboard GUI for the Chat Application
  */
 public class UserDashboard extends JFrame implements UserClientCallback {
 
-    private static final int WIDTH = 860;
-    private static final int HEIGHT = 640;
+    private static final int WIDTH = 800;
+    private static final int HEIGHT = 600;
 
     private final long userId;
     private final UserRemoteInterface userService;
@@ -97,96 +99,35 @@ public class UserDashboard extends JFrame implements UserClientCallback {
     }
 
     private void setupUI() {
-        setTitle("Chat App");
+        setTitle("Chat Application - User Dashboard");
         setSize(WIDTH, HEIGHT);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        getContentPane().setBackground(ModernTheme.BG_PRIMARY);
 
-        // Main layout
-        JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBackground(ModernTheme.BG_PRIMARY);
 
-        // ── Top Bar ──
-        JPanel topBar = createTopBar();
-        mainPanel.add(topBar, BorderLayout.NORTH);
-
-        // ── Tabbed Content ──
         tabbedPane = new JTabbedPane();
-        ModernTheme.styleTabbedPane(tabbedPane);
 
-        tabbedPane.addTab("  💬  Chats  ", createChatsPanel());
-        tabbedPane.addTab("  👤  Profile  ", createProfilePanel());
 
-        mainPanel.add(tabbedPane, BorderLayout.CENTER);
-        add(mainPanel);
-    }
+        JPanel chatsPanel = createChatsPanel();
+        tabbedPane.addTab("Chats", chatsPanel);
 
-    private JPanel createTopBar() {
-        JPanel topBar = new JPanel(new BorderLayout());
-        topBar.setBackground(ModernTheme.BG_SECONDARY);
-        topBar.setBorder(new EmptyBorder(14, 20, 14, 20));
-        topBar.setPreferredSize(new Dimension(WIDTH, 60));
 
-        // Welcome message
-        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        leftPanel.setOpaque(false);
+        JPanel profilePanel = createProfilePanel();
+        tabbedPane.addTab("My Profile", profilePanel);
 
-        // Avatar circle
-        JLabel avatar = new JLabel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                GradientPaint gp = new GradientPaint(0, 0, ModernTheme.ACCENT_BLUE,
-                        getWidth(), getHeight(), ModernTheme.ACCENT_PURPLE);
-                g2.setPaint(gp);
-                g2.fillOval(0, 0, 36, 36);
-                g2.setColor(Color.WHITE);
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 16));
-                String initial = nickName.substring(0, 1).toUpperCase();
-                FontMetrics fm = g2.getFontMetrics();
-                g2.drawString(initial, (36 - fm.stringWidth(initial)) / 2,
-                        (36 + fm.getAscent() - fm.getDescent()) / 2);
-                g2.dispose();
-            }
-        };
-        avatar.setPreferredSize(new Dimension(36, 36));
-        leftPanel.add(avatar);
-        leftPanel.add(Box.createHorizontalStrut(12));
-
-        JPanel namePanel = new JPanel();
-        namePanel.setLayout(new BoxLayout(namePanel, BoxLayout.Y_AXIS));
-        namePanel.setOpaque(false);
-        JLabel welcomeLabel = new JLabel("Welcome back,");
-        welcomeLabel.setFont(ModernTheme.FONT_SMALL);
-        welcomeLabel.setForeground(ModernTheme.TEXT_SECONDARY);
-        namePanel.add(welcomeLabel);
-        JLabel nameLabel = new JLabel(nickName);
-        nameLabel.setFont(ModernTheme.FONT_SUBHEAD);
-        nameLabel.setForeground(ModernTheme.TEXT_PRIMARY);
-        namePanel.add(nameLabel);
-        leftPanel.add(namePanel);
-
-        topBar.add(leftPanel, BorderLayout.WEST);
-
-        // Online status
-        JLabel statusLabel = ModernTheme.createStatusBadge("● Online", true);
-        topBar.add(statusLabel, BorderLayout.EAST);
-
-        return topBar;
+        getContentPane().add(tabbedPane);
     }
 
     private JPanel createChatsPanel() {
-        JPanel panel = new JPanel(new BorderLayout(0, 0));
-        panel.setBackground(ModernTheme.BG_PRIMARY);
-        panel.setBorder(new EmptyBorder(16, 20, 16, 20));
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        // Section header
-        JLabel sectionHeader = ModernTheme.createSectionHeader("Available Chats");
-        panel.add(sectionHeader, BorderLayout.NORTH);
 
-        // Table
+        JLabel welcomeLabel = new JLabel("Welcome, " + nickName + "!");
+        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        panel.add(welcomeLabel, BorderLayout.NORTH);
+
+
         String[] columnNames = {"ID", "Name", "Created At", "Status"};
         chatsTableModel = new DefaultTableModel(columnNames, 0) {
             @Override
@@ -195,180 +136,160 @@ public class UserDashboard extends JFrame implements UserClientCallback {
             }
         };
 
+
         chatsTable = new JTable(chatsTableModel);
         chatsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        ModernTheme.styleTable(chatsTable);
 
-        chatsTable.getColumnModel().getColumn(0).setPreferredWidth(40);
-        chatsTable.getColumnModel().getColumn(1).setPreferredWidth(200);
-        chatsTable.getColumnModel().getColumn(2).setPreferredWidth(180);
+        // Set column widths
+        chatsTable.getColumnModel().getColumn(0).setPreferredWidth(30);
+        chatsTable.getColumnModel().getColumn(1).setPreferredWidth(150);
+        chatsTable.getColumnModel().getColumn(2).setPreferredWidth(150);
         chatsTable.getColumnModel().getColumn(3).setPreferredWidth(100);
 
-        JScrollPane scrollPane = ModernTheme.createScrollPane(chatsTable);
+        // Create scroll pane for the table
+        JScrollPane scrollPane = new JScrollPane(chatsTable);
         panel.add(scrollPane, BorderLayout.CENTER);
 
-        // Button bar
-        JPanel buttonBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
-        buttonBar.setOpaque(false);
-        buttonBar.setBorder(new EmptyBorder(8, 0, 0, 0));
+        // Create buttons panel
+        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        joinChatButton = new JButton("Join Active Chat");
+        subscribeButton = new JButton("Subscribe to Chat");
+        unsubscribeButton = new JButton("Unsubscribe from Chat");
+        JButton refreshButton = new JButton("Refresh");
 
-        joinChatButton = ModernTheme.createPrimaryButton("Join Active Chat");
-        joinChatButton.setPreferredSize(new Dimension(160, ModernTheme.BUTTON_HEIGHT));
-        buttonBar.add(joinChatButton);
+        buttonsPanel.add(joinChatButton);
+        buttonsPanel.add(subscribeButton);
+        buttonsPanel.add(unsubscribeButton);
+        buttonsPanel.add(refreshButton);
 
-        subscribeButton = ModernTheme.createSecondaryButton("Subscribe");
-        subscribeButton.setPreferredSize(new Dimension(120, ModernTheme.BUTTON_HEIGHT));
-        buttonBar.add(subscribeButton);
+        panel.add(buttonsPanel, BorderLayout.SOUTH);
 
-        unsubscribeButton = ModernTheme.createSecondaryButton("Unsubscribe");
-        unsubscribeButton.setPreferredSize(new Dimension(130, ModernTheme.BUTTON_HEIGHT));
-        buttonBar.add(unsubscribeButton);
+        // Add action listeners
+        joinChatButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                joinActiveChat();
+            }
+        });
 
-        JButton refreshButton = ModernTheme.createTextButton("⟳ Refresh");
-        buttonBar.add(refreshButton);
+        subscribeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                subscribeToChat();
+            }
+        });
 
-        panel.add(buttonBar, BorderLayout.SOUTH);
+        unsubscribeButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                unsubscribeFromChat();
+            }
+        });
 
-        // Action listeners
-        joinChatButton.addActionListener(e -> joinActiveChat());
-        subscribeButton.addActionListener(e -> subscribeToChat());
-        unsubscribeButton.addActionListener(e -> unsubscribeFromChat());
-        refreshButton.addActionListener(e -> loadChatsData());
+        refreshButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                loadChatsData();
+            }
+        });
 
         return panel;
     }
 
     private JPanel createProfilePanel() {
-        JPanel panel = new JPanel(new BorderLayout(0, 0));
-        panel.setBackground(ModernTheme.BG_PRIMARY);
-        panel.setBorder(new EmptyBorder(20, 40, 20, 40));
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // Center content
-        JPanel centerPanel = new JPanel();
-        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
-        centerPanel.setOpaque(false);
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBorder(new TitledBorder("Update Your Profile"));
 
-        // Avatar section
-        JPanel avatarSection = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        avatarSection.setOpaque(false);
-        avatarSection.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
 
-        JLabel avatarLabel = new JLabel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                GradientPaint gp = new GradientPaint(0, 0, ModernTheme.ACCENT_BLUE,
-                        getWidth(), getHeight(), ModernTheme.ACCENT_PURPLE);
-                g2.setPaint(gp);
-                g2.fillOval(0, 0, 80, 80);
-                g2.setColor(Color.WHITE);
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 32));
-                String initial = nickName.substring(0, 1).toUpperCase();
-                FontMetrics fm = g2.getFontMetrics();
-                g2.drawString(initial, (80 - fm.stringWidth(initial)) / 2,
-                        (80 + fm.getAscent() - fm.getDescent()) / 2);
-                g2.dispose();
-            }
-        };
-        avatarLabel.setPreferredSize(new Dimension(80, 80));
-        avatarSection.add(avatarLabel);
-        centerPanel.add(avatarSection);
-        centerPanel.add(Box.createVerticalStrut(8));
+        // Username field
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        JLabel usernameLabel = new JLabel("Username:");
+        formPanel.add(usernameLabel, gbc);
 
-        JLabel profileName = new JLabel(nickName, SwingConstants.CENTER);
-        profileName.setFont(ModernTheme.FONT_HEADLINE);
-        profileName.setForeground(ModernTheme.TEXT_PRIMARY);
-        profileName.setAlignmentX(Component.CENTER_ALIGNMENT);
-        centerPanel.add(profileName);
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        usernameField = new JTextField(20);
+        formPanel.add(usernameField, gbc);
 
-        centerPanel.add(Box.createVerticalStrut(24));
+        // Password field
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 0.0;
+        JLabel passwordLabel = new JLabel("Password:");
+        formPanel.add(passwordLabel, gbc);
 
-        // Form card
-        JLabel sectionHeader = ModernTheme.createSectionHeader("Edit Profile");
-        sectionHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
-        centerPanel.add(sectionHeader);
-        centerPanel.add(Box.createVerticalStrut(8));
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        passwordField = new JPasswordField(20);
+        formPanel.add(passwordField, gbc);
 
-        JPanel formCard = ModernTheme.createCardPanel();
-        formCard.setLayout(new BoxLayout(formCard, BoxLayout.Y_AXIS));
-        formCard.setMaximumSize(new Dimension(500, 350));
+        // Nick Name field
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.weightx = 0.0;
+        JLabel nickNameLabel = new JLabel("Nick Name:");
+        formPanel.add(nickNameLabel, gbc);
 
-        // Username
-        formCard.add(createFormRow("USERNAME", usernameField = ModernTheme.createTextField("Username")));
-        formCard.add(Box.createVerticalStrut(12));
-
-        // Password
-        formCard.add(createFormRow("NEW PASSWORD", passwordField = ModernTheme.createPasswordField("Enter new password")));
-        formCard.add(Box.createVerticalStrut(12));
-
-        // Nickname
-        formCard.add(createFormRow("NICKNAME", nickNameField = ModernTheme.createTextField("Display name")));
-        formCard.add(Box.createVerticalStrut(12));
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        nickNameField = new JTextField(20);
+        formPanel.add(nickNameField, gbc);
 
         // Profile Picture
-        JLabel picLabel = new JLabel("PROFILE PICTURE");
-        picLabel.setFont(ModernTheme.FONT_CAPTION_BOLD);
-        picLabel.setForeground(ModernTheme.TEXT_SECONDARY);
-        picLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        formCard.add(picLabel);
-        formCard.add(Box.createVerticalStrut(6));
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.weightx = 0.0;
+        JLabel pictureLabel = new JLabel("Profile Picture:");
+        formPanel.add(pictureLabel, gbc);
 
-        JPanel picRow = new JPanel(new BorderLayout(10, 0));
-        picRow.setOpaque(false);
-        picRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, ModernTheme.BUTTON_HEIGHT));
-        picRow.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        chooseImageButton = ModernTheme.createSecondaryButton("Choose Image");
-        chooseImageButton.setPreferredSize(new Dimension(140, ModernTheme.BUTTON_HEIGHT));
-        picRow.add(chooseImageButton, BorderLayout.WEST);
-
+        gbc.gridx = 1;
+        gbc.weightx = 1.0;
+        JPanel picturePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        chooseImageButton = new JButton("Choose Image");
         imageLabel = new JLabel("No image selected");
-        imageLabel.setFont(ModernTheme.FONT_CAPTION);
-        imageLabel.setForeground(ModernTheme.TEXT_TERTIARY);
-        picRow.add(imageLabel, BorderLayout.CENTER);
-
-        formCard.add(picRow);
-
-        centerPanel.add(formCard);
-        centerPanel.add(Box.createVerticalStrut(20));
+        picturePanel.add(chooseImageButton);
+        picturePanel.add(imageLabel);
+        formPanel.add(picturePanel, gbc);
 
         // Update button
-        updateProfileButton = ModernTheme.createPrimaryButton("Update Profile");
-        updateProfileButton.setMaximumSize(new Dimension(500, ModernTheme.BUTTON_HEIGHT));
-        updateProfileButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-        centerPanel.add(updateProfileButton);
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        updateProfileButton = new JButton("Update Profile");
+        formPanel.add(updateProfileButton, gbc);
 
-        panel.add(centerPanel, BorderLayout.NORTH);
+        panel.add(formPanel, BorderLayout.CENTER);
 
-        // Action listeners
-        chooseImageButton.addActionListener(e -> selectProfilePicture());
-        updateProfileButton.addActionListener(e -> updateProfile());
+        // Add action listeners
+        chooseImageButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                selectProfilePicture();
+            }
+        });
 
+        updateProfileButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                updateProfile();
+            }
+        });
+
+        // Set initial values
         nickNameField.setText(nickName);
+
+        // Load initial profile data
         loadUserProfile();
 
         return panel;
-    }
-
-    private JPanel createFormRow(String labelText, JComponent field) {
-        JPanel row = new JPanel();
-        row.setLayout(new BoxLayout(row, BoxLayout.Y_AXIS));
-        row.setOpaque(false);
-        row.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-        JLabel label = new JLabel(labelText);
-        label.setFont(ModernTheme.FONT_CAPTION_BOLD);
-        label.setForeground(ModernTheme.TEXT_SECONDARY);
-        label.setAlignmentX(Component.LEFT_ALIGNMENT);
-        row.add(label);
-        row.add(Box.createVerticalStrut(6));
-
-        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, ModernTheme.INPUT_HEIGHT));
-        field.setAlignmentX(Component.LEFT_ALIGNMENT);
-        row.add(field);
-
-        return row;
     }
 
     private void loadUserProfile() {
@@ -376,6 +297,7 @@ public class UserDashboard extends JFrame implements UserClientCallback {
             Map<String, Object> profile = userService.getUserProfile(userId);
             usernameField.setText((String) profile.get("username"));
             nickNameField.setText((String) profile.get("nickName"));
+
         } catch (RemoteException e) {
             JOptionPane.showMessageDialog(this,
                     "Failed to load profile data: " + e.getMessage(),
@@ -387,8 +309,11 @@ public class UserDashboard extends JFrame implements UserClientCallback {
     private void loadChatsData() {
         try {
             List<Map<String, Object>> chats = userService.getAllChats();
+
+            // Clear table model
             chatsTableModel.setRowCount(0);
 
+            // Add chats to table
             for (Map<String, Object> chat : chats) {
                 Vector<Object> row = new Vector<>();
                 row.add(chat.get("id"));
@@ -396,7 +321,8 @@ public class UserDashboard extends JFrame implements UserClientCallback {
                 row.add(chat.get("createdAt"));
 
                 boolean isActive = (boolean) chat.get("isActive");
-                row.add(isActive ? "● Active" : "Inactive");
+                String status = isActive ? "Active" : "Inactive";
+                row.add(status);
 
                 chatsTableModel.addRow(row);
             }
@@ -419,10 +345,12 @@ public class UserDashboard extends JFrame implements UserClientCallback {
 
         try {
             Map<String, Object> chatData = userService.joinChat(userId);
+
             String chatName = (String) chatData.get("chatName");
             long chatId = (long) chatData.get("chatId");
             String startTime = (String) chatData.get("startTime");
 
+            // Add the missing isAdmin parameter (false for regular users)
             chatFrame = new ChatFrame(chatId, chatName, userId, nickName, userService, this, false);
             chatFrame.appendSystemMessage("Chat started at: " + startTime);
             chatFrame.setVisible(true);
@@ -448,6 +376,8 @@ public class UserDashboard extends JFrame implements UserClientCallback {
 
         long chatId = (long) chatsTableModel.getValueAt(selectedRow, 0);
         String chatName = (String) chatsTableModel.getValueAt(selectedRow, 1);
+
+        // Disable button during operation
         subscribeButton.setEnabled(false);
 
         new SwingWorker<Void, Void>() {
@@ -460,14 +390,14 @@ public class UserDashboard extends JFrame implements UserClientCallback {
             @Override
             protected void done() {
                 try {
-                    get();
+                    get(); // Check for exceptions
                     JOptionPane.showMessageDialog(UserDashboard.this,
-                            "Subscribed to '" + chatName + "'",
+                            "Successfully subscribed to chat '" + chatName + "'",
                             "Success",
                             JOptionPane.INFORMATION_MESSAGE);
                 } catch (Exception e) {
                     JOptionPane.showMessageDialog(UserDashboard.this,
-                            "Failed to subscribe: " + e.getMessage(),
+                            "Failed to subscribe to chat: " + e.getMessage(),
                             "Error",
                             JOptionPane.ERROR_MESSAGE);
                 } finally {
@@ -489,6 +419,8 @@ public class UserDashboard extends JFrame implements UserClientCallback {
 
         final long chatId = (long) chatsTableModel.getValueAt(selectedRow, 0);
         final String chatName = (String) chatsTableModel.getValueAt(selectedRow, 1);
+
+        // Disable button during operation
         unsubscribeButton.setEnabled(false);
 
         new SwingWorker<Void, Void>() {
@@ -501,14 +433,14 @@ public class UserDashboard extends JFrame implements UserClientCallback {
             @Override
             protected void done() {
                 try {
-                    get();
+                    get(); // Check for exceptions
                     JOptionPane.showMessageDialog(UserDashboard.this,
-                            "Unsubscribed from '" + chatName + "'",
+                            "Successfully unsubscribed from chat '" + chatName + "'",
                             "Success",
                             JOptionPane.INFORMATION_MESSAGE);
                 } catch (Exception e) {
                     JOptionPane.showMessageDialog(UserDashboard.this,
-                            "Failed to unsubscribe: " + e.getMessage(),
+                            "Failed to unsubscribe from chat: " + e.getMessage(),
                             "Error",
                             JOptionPane.ERROR_MESSAGE);
                 } finally {
@@ -530,12 +462,18 @@ public class UserDashboard extends JFrame implements UserClientCallback {
             try {
                 BufferedImage img = ImageIO.read(selectedFile);
                 if (img != null) {
+                    // Resize image if needed
                     BufferedImage resizedImg = resizeImage(img, 64, 64);
+
+                    // Convert to byte array
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     ImageIO.write(resizedImg, "jpg", baos);
                     profilePictureBytes = baos.toByteArray();
+
+                    // Update preview label
                     imageLabel.setText(selectedFile.getName());
-                    imageLabel.setForeground(ModernTheme.ACCENT_GREEN);
+
+                    // Optional: Show small preview
                     ImageIcon icon = new ImageIcon(resizedImg);
                     imageLabel.setIcon(icon);
                 }
@@ -551,7 +489,6 @@ public class UserDashboard extends JFrame implements UserClientCallback {
     private BufferedImage resizeImage(BufferedImage originalImage, int targetWidth, int targetHeight) {
         BufferedImage resizedImage = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics2D = resizedImage.createGraphics();
-        graphics2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         graphics2D.drawImage(originalImage, 0, 0, targetWidth, targetHeight, null);
         graphics2D.dispose();
         return resizedImage;
@@ -562,9 +499,10 @@ public class UserDashboard extends JFrame implements UserClientCallback {
         String password = new String(passwordField.getPassword());
         String nickName = nickNameField.getText().trim();
 
+        // Validate inputs
         if (username.isEmpty() || password.isEmpty() || nickName.isEmpty()) {
             JOptionPane.showMessageDialog(this,
-                    "Username, password, and nickname are required",
+                    "Username, password, and nick name are required",
                     "Validation Error",
                     JOptionPane.ERROR_MESSAGE);
             return;
@@ -573,15 +511,15 @@ public class UserDashboard extends JFrame implements UserClientCallback {
         try {
             userService.updateUserProfile(userId, username, password, nickName, profilePictureBytes);
             JOptionPane.showMessageDialog(this,
-                    "Profile updated successfully!",
+                    "Profile updated successfully",
                     "Success",
                     JOptionPane.INFORMATION_MESSAGE);
 
+            // Clear fields
             passwordField.setText("");
             profilePictureBytes = null;
             imageLabel.setIcon(null);
             imageLabel.setText("No image selected");
-            imageLabel.setForeground(ModernTheme.TEXT_TERTIARY);
 
         } catch (RemoteException e) {
             JOptionPane.showMessageDialog(this,
@@ -596,14 +534,14 @@ public class UserDashboard extends JFrame implements UserClientCallback {
         chatFrame = null;
     }
 
-    // ── UserClientCallback implementation ──
-
+    // UserClientCallback implementation
     @Override
     public void receiveMessage(Map<String, Object> messageData) throws RemoteException {
         if (isInChat && chatFrame != null) {
             String nickName = (String) messageData.get("nickName");
             String message = (String) messageData.get("message");
             String timestamp = (String) messageData.get("timestamp");
+
             chatFrame.appendUserMessage(nickName, message, timestamp);
         }
     }
@@ -612,7 +550,9 @@ public class UserDashboard extends JFrame implements UserClientCallback {
     public void userJoined(Map<String, Object> userData) throws RemoteException {
         if (isInChat && chatFrame != null) {
             String nickName = (String) userData.get("nickName");
-            chatFrame.appendSystemMessage(nickName + " joined the chat");
+            String timestamp = (String) userData.get("timestamp");
+
+            chatFrame.appendSystemMessage("\"" + nickName + "\" has joined : " + timestamp);
         }
     }
 
@@ -620,7 +560,9 @@ public class UserDashboard extends JFrame implements UserClientCallback {
     public void userLeft(Map<String, Object> userData) throws RemoteException {
         if (isInChat && chatFrame != null) {
             String nickName = (String) userData.get("nickName");
-            chatFrame.appendSystemMessage(nickName + " left the chat");
+            String timestamp = (String) userData.get("timestamp");
+
+            chatFrame.appendSystemMessage("\"" + nickName + "\" left : " + timestamp);
         }
     }
 
@@ -629,13 +571,12 @@ public class UserDashboard extends JFrame implements UserClientCallback {
         String chatName = (String) chatData.get("chatName");
         String startTime = (String) chatData.get("startTime");
 
-        SwingUtilities.invokeLater(() -> {
-            JOptionPane.showMessageDialog(this,
-                    "Chat '" + chatName + "' has started at " + startTime,
-                    "Chat Started",
-                    JOptionPane.INFORMATION_MESSAGE);
-            loadChatsData();
-        });
+        JOptionPane.showMessageDialog(this,
+                "Chat '" + chatName + "' has started at " + startTime,
+                "Chat Started",
+                JOptionPane.INFORMATION_MESSAGE);
+
+        loadChatsData();
     }
 
     @Override
@@ -643,51 +584,48 @@ public class UserDashboard extends JFrame implements UserClientCallback {
         String chatName = (String) chatData.get("chatName");
         String endTime = (String) chatData.get("endTime");
 
-        SwingUtilities.invokeLater(() -> {
-            if (isInChat && chatFrame != null) {
-                chatFrame.appendSystemMessage("Chat ended at: " + endTime);
-                chatFrame.disableChat();
-            }
+        if (isInChat && chatFrame != null) {
+            chatFrame.appendSystemMessage("Chat stopped at: " + endTime);
+            chatFrame.disableChat();
+        }
 
-            JOptionPane.showMessageDialog(this,
-                    "Chat '" + chatName + "' has ended at " + endTime,
-                    "Chat Ended",
-                    JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(this,
+                "Chat '" + chatName + "' has ended at " + endTime,
+                "Chat Ended",
+                JOptionPane.INFORMATION_MESSAGE);
 
-            loadChatsData();
-            isInChat = false;
-        });
+        loadChatsData();
+        isInChat = false;
     }
 
     @Override
     public void subscriptionChanged(boolean subscribed, long chatId) throws RemoteException {
-        SwingUtilities.invokeLater(() -> {
-            loadChatsData();
-            String chatName = "the chat";
-            for (int i = 0; i < chatsTableModel.getRowCount(); i++) {
-                if ((long) chatsTableModel.getValueAt(i, 0) == chatId) {
-                    chatName = (String) chatsTableModel.getValueAt(i, 1);
-                    break;
-                }
-            }
+        loadChatsData();
 
-            JOptionPane.showMessageDialog(this,
-                    subscribed ?
-                            "You have been subscribed to '" + chatName + "'" :
-                            "You have been unsubscribed from '" + chatName + "'",
-                    "Subscription Changed",
-                    JOptionPane.INFORMATION_MESSAGE);
-        });
+        String chatName = "the chat";
+        for (int i = 0; i < chatsTableModel.getRowCount(); i++) {
+            if ((long) chatsTableModel.getValueAt(i, 0) == chatId) {
+                chatName = (String) chatsTableModel.getValueAt(i, 1);
+                break;
+            }
+        }
+
+        JOptionPane.showMessageDialog(this,
+                subscribed ?
+                        "You have been subscribed to '" + chatName + "'" :
+                        "You have been unsubscribed from '" + chatName + "'",
+                "Subscription Changed",
+                JOptionPane.INFORMATION_MESSAGE);
     }
 
     @Override
     public void userRemoved() throws RemoteException {
-        SwingUtilities.invokeLater(() -> {
-            JOptionPane.showMessageDialog(this,
-                    "Your account has been removed by the administrator.",
-                    "Account Removed",
-                    JOptionPane.WARNING_MESSAGE);
-            dispose();
-        });
+        JOptionPane.showMessageDialog(this,
+                "Your account has been removed by the administrator.",
+                "Account Removed",
+                JOptionPane.WARNING_MESSAGE);
+
+        // Close this window
+        this.dispose();
     }
 }

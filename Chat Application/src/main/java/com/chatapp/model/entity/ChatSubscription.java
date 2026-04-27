@@ -1,3 +1,4 @@
+
 package com.chatapp.model.entity;
 
 import jakarta.persistence.*;
@@ -44,7 +45,7 @@ public class ChatSubscription implements Serializable {
         this.subscribedAt = LocalDateTime.now();
     }
     
-    // Getters and Setters - for setting subscriptions
+    // Getters and Setters
     public Long getId() {
         return id;
     }
